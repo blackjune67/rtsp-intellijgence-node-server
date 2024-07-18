@@ -1,0 +1,718 @@
+<html>
+
+
+<head>
+
+    <title>하이버프 AI 영상 분석</title>
+    <link rel="icon" type="image/png" href="assets/icon.png"/>
+    <meta charset="utf-8">
+    <meta name="description" content="Interactive visualiser for the Google Cloud Video Intelligence API.">
+    <meta name="keywords" content="google cloud, video, intelligence, api, video intelligence api, google cloud">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+    <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/vue-router@2.0.0/dist/vue-router.js"></script>
+    <script src="../public/js/config.js"></script>
+
+    <!--
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-N80GH8KX9W"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() { dataLayer.push(arguments); }
+            gtag('js', new Date());
+
+            gtag('config', 'G-N80GH8KX9W', { client_storage: 'none' });
+
+        </script> -->
+
+
+    <style>
+        body {
+            text-align: center;
+            min-height: 1500px;
+            min-width: 1130px;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5 {
+            color: #5d5d5d;
+        }
+
+        #video-conatiner {
+            position: relative;
+            width: 800px;
+            height: 450px;
+            margin: 15px;
+            display: inline-block;
+            overflow: hidden;
+        }
+
+        #video-conatiner > canvas {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            opacity: 0.8;
+            left: 0;
+            pointer-events: none;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            margin: auto;
+            display: block;
+            object-fit: cover;
+        }
+
+        video::-webkit-media-controls-fullscreen-button {
+            display: none !important;
+        }
+
+        .mdl-layout__header {
+            background-color: rgb(252, 155, 3);
+            color: #FFFFFF;
+            font-weight: 100;
+        }
+
+        #upload-data {
+            display: inline-block;
+            text-align: center;
+            vertical-align: top;
+            width: 250px;
+        }
+
+        #upload-data > p {
+            text-align: justify;
+        }
+
+        .feature-tabs {
+            margin: 30px;
+            text-align: center;
+            display: flex; /* 추가된 부분 */
+            justify-content: center; /* 추가된 부분 */
+            gap: 10px; /* 추가된 부분 */
+            align-items: center; /* 추가된 부분 */
+        }
+
+        .feature-tabs > div {
+            display: inline-block;
+            font-size: 1.2em;
+            padding: 12px;
+            cursor: pointer;
+            color: #777777;
+            font-weight: 300;
+
+            border: solid #fc9b03 1px;
+            border-radius: 5px;
+            margin: 5px;
+        }
+
+        .feature-tabs > div:hover {
+            background-color: #fc9b031a;
+        }
+
+
+        .feature-tabs > .selected {
+            border-bottom: 2px solid #fc9b03;
+        }
+
+        .feature-tabs > .disabled {
+            color: #cdcdcd;
+        }
+
+        .logo {
+            width: inherit;
+        }
+
+        .upload-area {
+
+            /* display: inline-block; */
+            width: 200px;
+            /* height: 62px; */
+            border: dashed #FC9B03 3px;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px;
+            overflow: hidden;
+        }
+
+        .data-warning {
+            background-color: #ffffc3;
+            /* display: inline-block; */
+            margin: auto;
+            position: relative;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .material-icons {
+            vertical-align: middle;
+            font-size: 19px;
+        }
+
+        .nav-tab > .material-icons {
+            color: #0F9D58;
+        }
+
+        .pip-video {
+            position: fixed;
+            width: 320px;
+            height: 180px;
+            bottom: 20px;
+            right: 20px;
+            border: 1px solid #ccc;
+            background-color: black;
+            z-index: 1000;
+        }
+
+        #toggle-pip-button {
+            margin: 0; /* 수정된 부분 */
+            padding: 12px; /* 수정된 부분 */
+            cursor: pointer;
+            background-color: #fc9b03;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2em; /* 추가된 부분 */
+        }
+
+        #toggle-pip-button:hover {
+            background-color: #e88a02;
+        }
+    </style>
+</head>
+
+
+<body>
+
+
+<div id="app" class="mdl-layout--fixed-header">
+
+    <header class="mdl-layout__header">
+        <div class="mdl-layout-icon">
+            <img class="logo" src="assets/icon.png">
+        </div>
+        <div class="mdl-layout__header-row">
+
+            <span class="mdl-layout-title">하이버프 AI 영상 분석</span>
+        </div>
+    </header>
+
+    <div id="video-conatiner">
+        <canvas id="my_canvas" width="800" height="500"></canvas>
+        <video id="video" muted controls autoplay></video>
+    </div>
+
+    <div id="upload-data">
+        <h5>영상 분석을 시도하세요!😎</h5>
+
+        <p>하이버프 영상 분석 시스템입니다.</br>아래 영상과 json파일을 업로드하세요.</p>
+        <p>영상과 JSON파일의 싱크를 맞춰 결과값을 보여주는 시연용 웹 사이트입니다.</p>
+        <p>이 웹사이트는 영상과 JSON파일을 저장하지 않습니다.</p>
+
+        <div class="upload-area" ondrop="drop_video(event)" ondragover="drag_enter(event)">
+            <p>샘플 영상을 업로드 하세요.</p>
+            <input id="video_input" type="file" accept="video/*"/>
+        </div>
+        <div class="upload-area" ondrop="drop_json(event)" ondragover="drag_enter(event)">
+            <p>샘플 JSON 파일을 업로드 하세요.</p>
+            <input id="json_input" type="file" multiple accept="application/JSON"/>
+        </div>
+        <a id="download_link" href="#" style="display:none;">합쳐진 JSON 파일 다운로드</a>
+    </div>
+
+    <div v-if="data_misaligned" class="data-warning">
+        json 데이터가 동영상 파일과 일치 하지 않는 것 같은데, 올바른 파일을 모두 업로드했나요? 🤔
+    </div>
+
+
+    <annotations-nav v-bind:title_ids_dict="title_ids_dict" v-bind:detected_features="detected_features"
+                     v-bind:current_view="current_view" v-on:nav-clicked="set_current_view">
+    </annotations-nav>
+
+    <object-tracking-viz v-if="current_view == 'Object Tracking'" id="object_tracks" v-bind:json_data="json_data"
+                         v-bind:video_info="video_info" v-on:segment-clicked="jump_video"></object-tracking-viz>
+
+    <face-detection-viz v-if="current_view == 'Face Detection'" id="face_detection" v-bind:json_data="json_data"
+                        v-bind:video_info="video_info" v-on:segment-clicked="jump_video">
+    </face-detection-viz>
+
+    <explicit-content-detection-viz v-if="current_view == 'Explicit Content Detection'" id="explicit_content_detection" v-bind:json_data="json_data"
+                        v-bind:video_info="video_info" v-on:shot-clicked="jump_video">
+    </explicit-content-detection-viz>
+
+    <div id="pip-container">
+        <canvas id="pip-video" class="pip-video"></video>
+    </div>
+</div>
+
+
+<script src="../public/js/utils.js"></script>
+
+<script src="../public/components/object_tracking.js"></script>
+<script src="../public/components/face_detection.js"></script>
+<script src="../public/components/explicit_content_detection.js"></script>
+<script src="../public/js/jsmpeg.min.js"></script>
+
+<script>
+    window.onload = function() {
+        // 브라우저 캐시 무효화
+        if ('serviceWorker' in navigator) {
+            caches.keys().then(function(names) {
+                for (let name of names) {
+                    caches.delete(name);
+                }
+            });
+        }
+
+        // fetchLatestFiles(); // 로드 시 최신 파일을 불러옴.
+    };
+
+    async function fetchLatestFiles() {
+        try {
+            const response = await fetch('http://localhost:8080/latest-files');
+            if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+            }
+            const { latestVideo, latestJson } = await response.json();
+            console.log('==> latestJson : ', latestJson)
+
+            const videoUrl = `https://storage.googleapis.com/highbuff_developer_seoul/${latestVideo}`;
+            const jsonUrl = `https://storage.googleapis.com/highbuff_developer_seoul/${latestJson}`;
+
+            const videoTimestamp = latestVideo.match(/temp_(\d{8}_\d{6})\.mp4/)[1];
+            const jsonTimestamp = latestJson.match(/merged_(\d{8}_\d{6})\.json/)[1];
+
+            // 같은 타임스탬프가 아니면 재생하지 않도록.
+            if (videoTimestamp !== jsonTimestamp) {
+                console.log('Video and JSON timestamps do not match. Skipping load.');
+                return;
+            }
+
+            console.log('==> json URL : ', jsonUrl)
+
+            const videoResponse = await fetch(videoUrl);
+            if (!videoResponse.ok) {
+                throw new Error('Network response was not ok ' + videoResponse.statusText);
+            }
+            const videoBlob = await videoResponse.blob();
+            const videoObjectUrl = URL.createObjectURL(videoBlob);
+            document.getElementById('video').src = videoObjectUrl;
+
+            const jsonResponse = await fetch(jsonUrl);
+            if (!jsonResponse.ok) {
+                throw new Error('Network response was not ok ' + jsonResponse.statusText);
+            }
+            const jsonData = await jsonResponse.json();
+            console.log(jsonData);
+
+            app.json_data = jsonData;
+
+        } catch (error) {
+            console.error('Fetch error: ', error);
+        }
+    }
+
+    function jump_video_to_time(time) {
+        const video = document.querySelector('video')
+        video.currentTime = time
+        video.pause();
+        // video.
+    }
+
+    // define component
+    Vue.component('annotations-nav-tab', {
+        props: ['title', 'current_view', 'data_id', 'detected_features'],
+        computed: {
+            has_data: function () {
+                return this.detected_features.includes(this.data_id)
+            }
+        },
+        template: `
+          <div class="nav-tab" v-bind:class="{selected:current_view == title, disabled:(!has_data)}">{{ title }}
+            <span v-if="has_data" class="material-icons">
+                    check_circle
+                </span>
+          </div>
+        `
+    })
+
+    Vue.component('annotations-nav', {
+        props: ['title_ids_dict', 'current_view', 'detected_features'],
+        methods: {
+            nav_clicked: function (title) {
+                this.$emit('nav-clicked', title)
+            },
+        },
+        template: `
+          <div class="feature-tabs">
+            <annotations-nav-tab v-for="id, title in title_ids_dict"
+                                 v-bind:title="title" v-bind:data_id="id"
+                                 v-bind:detected_features="detected_features" v-bind:current_view="current_view"
+                                 v-on:click.native="nav_clicked(title)">
+            </annotations-nav-tab>
+            <!-- 추가된 부분 -->
+            <button id="toggle-pip-button" onclick="togglePip()">Toggle PIP</button>
+          </div>
+        `
+    })
+
+    var router = new VueRouter({
+        mode: 'history',
+        // routes: { path: '/match/:id', component: test_com}
+    });
+
+
+    var app = new Vue({
+        router,
+        el: '#app',
+        data: {
+            json_data: {},
+            video_info: {width: 800, height: 500, length: 252},
+            video_length: 252,
+            current_view: 'Label Detection',
+            title_ids_dict: {
+                'Object Tracking': 'object_annotations',
+                'Face Detection': 'face_detection_annotations',
+                'Explicit Content Detection': 'explicit_annotation'
+            }
+        }, mounted: function () {
+            document.addEventListener('keydown', this.handleKeydown);
+        },
+        beforeDestroy: function () {
+            document.removeEventListener('keydown', this.handleKeydown);
+        },
+        methods: {
+            jump_video: function (event_data) {
+                document.querySelector('video').scrollIntoView({'behavior': 'smooth', 'block': 'center'})
+                jump_video_to_time(event_data.seconds)
+            },
+            set_current_view: function (new_view) {
+                this.current_view = new_view
+                router.push({hash: '#' + new_view})
+            },
+            handleKeydown: function (event) {
+                if (event.code === 'Space') {
+                    const video = document.querySelector('video');
+                    event.preventDefault();
+                    if (video.paused) {
+                        video.play();
+                    } else {
+                        video.pause();
+                    }
+                }
+            }
+        },
+        computed: {
+            data_misaligned: function () {
+                if (this.json_data)
+                    if (this.json_data.annotation_results) {
+                        const delta = this.video_info.length - this.json_data.annotation_results[0].segment.end_time_offset.seconds
+                        if (Math.abs(delta) > 2) {
+                            return true
+                        }
+                    }
+                return false
+            },
+            detected_features: function () {
+
+                var features = []
+
+                if (!this.json_data.annotation_results)
+                    return features
+
+                this.json_data.annotation_results.forEach(annotations => {
+                    features = features.concat(Object.keys(annotations))
+                })
+
+                return features
+            }
+        }
+    })
+
+
+    const URL = window.URL || window.webkitURL
+
+    function fetch_json(url) {
+        var json = null
+        $.ajax({
+            'async': false,
+            'url': url,
+            'dataType': "json",
+            'cache': false,
+            'success': function (data) {
+                json = data
+            }
+        })
+        return json
+    }
+
+    function load_video_from_url(url) {
+        const timestamp = new Date().getTime();
+        const urlWithTimestamp = `${url}?t=${timestamp}`;
+        video.src = urlWithTimestamp;
+        // video.src = url
+    }
+
+    function load_video_dragged(event) {
+        const file = this.files[0]
+        const file_url = URL.createObjectURL(file)
+        load_video_from_url(file_url)
+    }
+
+    // * 기존 JSON 처리 함수
+    // function load_json_from_url(url) {
+    //     var json = null
+    //     const fileInput = document.getElementById('json_input');
+    //     $.ajax({
+    //         'async': false,
+    //         'url': url,
+    //         'dataType': "json",
+    //         'success': function (data) {
+    //             json = data
+    //         }
+    //     })
+    //     json_data = json
+
+    //     console.log(json_data)
+    //     app.json_data = json_data
+
+    //     console.log('keys ->>', Object.keys(json_data))
+
+    //     // * check validity of json
+    //     if (fileInput.files.length === 1 && !('annotation_results' in json_data)) {
+    //         alert("⚠️ JSON 파일이 잘못 됐습니다. ⚠️\nJSON 파일 데이터 내에 annotation_results가 없습니다.\n올바른 JSON 파일을 업로드 해주세요.")
+    //         json_input.value = null
+    //     }
+    // }
+
+    // * 재 작성 JSON 처리 함수
+    function load_json_from_url(url) {
+        $.ajax({
+            url: url,
+            dataType: "json",
+            cache: false,
+            success: function (data) {
+                json_data = data;
+                console.log(json_data);
+                app.json_data = json_data;
+
+                // console.log('keys ->>', Object.keys(json_data));
+
+                // * check validity of json
+                if (document.getElementById('json_input').files.length === 1 && !('annotation_results' in json_data)) {
+                    alert("⚠️ JSON 파일이 잘못 됐습니다. ⚠️\nJSON 파일 데이터 내에 annotation_results가 없습니다.\n올바른 JSON 파일을 업로드 해주세요.");
+                    document.getElementById('json_input').value = null;
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("JSON 파일을 불러오는 중 오류가 발생했습니다: ", textStatus, errorThrown);
+            }
+        });
+    }
+
+    function load_json_dragged(event) {
+        const file = this.files[0]
+        const file_url = URL.createObjectURL(file)
+        load_json_from_url(file_url);
+    }
+
+    document.getElementById('json_input').addEventListener('change', function () {
+        const fileInput = document.getElementById('json_input');
+        if (fileInput.files.length > 2) {
+            alert('2개 이상의 파일은 업로드 할 수 없습니다.');
+            fileInput.value = ''; // 선택된 파일 초기화
+        } else {
+            // load_json_dragged.call(fileInput);
+            handle_json_files(this.files)
+        }
+    });
+
+    function handle_json_files(files) {
+        let fileA = null;
+        let fileB = null;
+
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const jsonData = JSON.parse(event.target.result);
+                if (jsonData.annotation_results) {
+                    fileA = file;
+                    jsonA = jsonData;
+                } else if (jsonData.explicit_annotation) {
+                    fileB = file;
+                    // json_data.annotation_results[index].explicit_annotation.frames
+                    jsonB = jsonData;
+                }
+
+                // 두 파일이 모두 로드되면 병합
+                if (fileA && fileB) {
+                    merge_json();
+                }
+            };
+            reader.readAsText(file);
+
+        });
+    }
+
+    function merge_json() {
+        if (jsonA && jsonB) {
+            jsonA.annotation_results.forEach(result => {
+                if (result.explicit_annotation) {
+                    result.explicit_annotation = jsonB.explicit_annotation;
+                }
+            });
+            const mergedJsonData = JSON.stringify(jsonA, null, 2);
+            update_download_link(mergedJsonData, 'merged_data.json');
+            const blob = new Blob([mergedJsonData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            load_json_from_url(url);
+        }
+    }
+
+    function update_download_link(jsonData, filename) {
+        const blob = new Blob([jsonData], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const downloadLink = document.getElementById('download_link');
+        downloadLink.href = url;
+        downloadLink.download = filename;
+        downloadLink.style.display = 'inline';
+    }
+
+    const pipVideo = document.getElementById('pip-video');
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    pipVideo.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        offsetX = e.clientX - pipVideo.getBoundingClientRect().left;
+        offsetY = e.clientY - pipVideo.getBoundingClientRect().top;
+        pipVideo.style.cursor = 'grabbing'; // 커서 모양 변경
+    });
+    document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            pipVideo.style.left = `${e.clientX - offsetX}px`;
+            pipVideo.style.top = `${e.clientY - offsetY}px`;
+        }
+    });
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+        pipVideo.style.cursor = 'move'; // 커서 모양 복구
+    });
+
+    function togglePip() {
+        const pipContainer = document.getElementById('pip-container');
+        if (pipContainer.style.display === 'none' || pipContainer.style.display === '') {
+            pipContainer.style.display = 'block';
+        } else {
+            pipContainer.style.display = 'none';
+        }
+    }
+
+    const GCP_SERVER_IP = CONFIG.GCP_SERVER_IP; // GCP 서버의 외부 IP 주소
+    const GCP_SERVER_PORT = CONFIG.GCP_SERVER_PORT; // GCP 서버의 포트 번호
+    
+    const WINDOW_LOCATION_HOST_NAME = window.location.hostname
+    const LOCAL_HOST_PORT = CONFIG.LOCAL_HOST_PORT;
+
+
+    const mediaSource = new MediaSource();
+    pipVideo.src = URL.createObjectURL(mediaSource);
+
+    let wsUrl;
+    if (window.location.protocol === 'https:') {
+        wsUrl = `wss://${window.location.hostname}:8080`;
+        // wsUrl = `wss://${GCP_SERVER_IP}:${GCP_SERVER_PORT}`;
+    } else {
+        wsUrl = `ws://${window.location.hostname}:8080`;
+        // wsUrl = `ws://${GCP_SERVER_IP}:${GCP_SERVER_PORT}`;
+    }
+
+    const player = new JSMpeg.Player(wsUrl, {
+        canvas: pipVideo  // canvas 요소 대신 video 요소를 직접 사용
+    });
+
+    // WebSocket 연결 관리
+    function checkConnection() {
+        if (player.client && player.client.socket && player.client.socket.readyState === WebSocket.CLOSED) {
+            console.log('Connection is closed. Attempting to reconnect...');
+            player.destroy();
+            player = new JSMpeg.Player(wsUrl, {
+                canvas: pipVideo
+            });
+        }
+    }
+
+    // 주기적으로 연결 확인
+    setInterval(checkConnection, 10000);
+
+    // 에러 처리
+    pipVideo.onerror = (error) => {
+        console.error('Video error:', error);
+    };
+
+
+    var json_data = {}
+    const video = document.getElementById('video')
+    const video_input = document.getElementById('video_input')
+    const json_input = document.getElementById('json_input')
+
+    video.oncanplay = function () {
+        console.log("Can start playing video", video.duration, video.videoHeight, video.videoWidth)
+        app.video_info.length = video.duration
+        app.video_length.duration
+        app.video_info.height = 500
+        app.video_info.width = 800
+    }
+
+    function drag_enter(ev) {
+        ev.preventDefault()
+    }
+
+    function drop_video(ev) {
+        ev.preventDefault()
+        video_input.files = ev.dataTransfer.files
+        video_input.dispatchEvent(new Event('change'))
+
+    }
+
+    function drop_json(ev) {
+        ev.preventDefault()
+        json_input.files = ev.dataTransfer.files
+        json_input.dispatchEvent(new Event('change'))
+    }
+
+    video_input.addEventListener('change', load_video_dragged, false)
+    json_input.addEventListener('change', load_json_dragged, false)
+
+    
+
+    // * JSON 로드
+    // load_json_from_url("assets/sample_test_json.json")
+    load_json_from_url("https://storage.googleapis.com/highbuff_developer_seoul/visualize-view-final-output-files/final_output.json")
+    load_video_from_url("https://storage.googleapis.com/highbuff_developer_seoul/visualize-view-final-output-files/final_output.mp4")
+
+    // check for hash code in url
+    if (app.$route.hash) {
+        const hash_value = decodeURI(app.$route.hash.substring(1))
+        if (hash_value in app.title_ids_dict) {
+            app.current_view = hash_value
+        }
+
+    }
+
+    // window.onload = fetchLatestFiles;
+</script>
+</body>
+</html>
